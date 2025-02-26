@@ -3,141 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Amazon Plus - Login</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background-color: #f5f7fa;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        
-        .login-container {
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 400px;
-            padding: 30px;
-            text-align: center;
-        }
-        
-        .login-logo {
-            width: 200px;
-            margin-bottom: 20px;
-        }
-        
-        .login-title {
-            font-size: 24px;
-            color: #2c3e50;
-            margin-bottom: 20px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        
-        .form-control {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-            transition: border-color 0.3s ease;
-        }
-        
-        .form-control:focus {
-            border-color: #ff9900;
-            outline: none;
-        }
-        
-        .btn {
-            width: 100%;
-            padding: 12px 15px;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary {
-            background-color: #ff9900;
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background-color: #e68a00;
-        }
-        
-        .error-message {
-            color: #e74c3c;
-            margin-top: 15px;
-            display: none;
-        }
-    </style>
+    <title>Sistema de Gestão de Estoque</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="login-container">
-        <img src="https://achadosbynay.my.canva.site/amazon-plus" alt="Amazon Plus" class="login-logo">
-        <h1 class="login-title">Sistema de Gestão de Estoque</h1>
-        <form id="login-form">
-            <div class="form-group">
-                <label for="username">Usuário</label>
-                <input type="text" id="username" class="form-control" required>
+    <header>
+        <div class="container">
+            <div class="logo">📦 Sistema de Gestão de Estoque</div>
+            <div class="date" id="current-date"></div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Dashboard -->
+        <div class="dashboard">
+            <div class="dashboard-card">
+                <div class="dashboard-card-title">Total de Produtos</div>
+                <div class="dashboard-card-value" id="total-products">0</div>
             </div>
-            <div class="form-group">
-                <label for="password">Senha</label>
-                <input type="password" id="password" class="form-control" required>
+            <div class="dashboard-card">
+                <div class="dashboard-card-title">Valor em Estoque</div>
+                <div class="dashboard-card-value" id="stock-value">R$ 0,00</div>
             </div>
-            <button type="submit" class="btn btn-primary">Entrar</button>
-            <div id="error-message" class="error-message">Usuário ou senha incorretos</div>
-        </form>
+        </div>
+
+        <!-- Abas do Sistema -->
+        <div class="tab-container">
+            <div class="tab-header">
+                <button class="tab-btn active" data-tab="inventory-tab">Inventário</button>
+                <button class="tab-btn" data-tab="add-product-tab">Adicionar Produto</button>
+                <button class="tab-btn" data-tab="remove-product-tab">Remover Estoque</button>
+            </div>
+
+            <!-- Tabela de Inventário -->
+            <div id="inventory-tab" class="tab-content active">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Produto</th>
+                            <th>Preço</th>
+                            <th>Quantidade</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-table-body"></tbody>
+                </table>
+            </div>
+
+            <!-- Formulário Adicionar Produto -->
+            <div id="add-product-tab" class="tab-content">
+                <form id="add-product-form">
+                    <label>Código:</label>
+                    <input type="text" id="product-code" required>
+                    <label>Nome:</label>
+                    <input type="text" id="product-name" required>
+                    <label>Preço (R$):</label>
+                    <input type="number" id="product-price" step="0.01" required>
+                    <label>Quantidade:</label>
+                    <input type="number" id="product-quantity" required>
+                    <button type="submit">Adicionar</button>
+                </form>
+            </div>
+
+            <!-- Formulário Remover Produto -->
+            <div id="remove-product-tab" class="tab-content">
+                <form id="remove-product-form">
+                    <label>Selecione o Produto:</label>
+                    <select id="remove-product-select" required></select>
+                    <label>Quantidade a Remover:</label>
+                    <input type="number" id="remove-quantity" required>
+                    <button type="submit">Remover</button>
+                </form>
+            </div>
+        </div>
     </div>
 
-    <script>
-        document.getElementById('login-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            
-            // Credenciais simples para demonstração - em um sistema real, você usaria autenticação mais segura
-            if (username === 'admin' && password === 'admin123') {
-                // Salvar informação de login no localStorage
-                localStorage.setItem('isLoggedIn', 'true');
-                
-                // Redirecionar para o dashboard
-                window.location.href = 'dashboard.html';
-            } else {
-                // Mostrar mensagem de erro
-                document.getElementById('error-message').style.display = 'block';
-            }
-        });
-        
-        // Verificar se o usuário já está logado ao carregar a página
-        window.addEventListener('load', function() {
-            if (localStorage.getItem('isLoggedIn') === 'true') {
-                window.location.href = 'dashboard.html';
-            }
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
