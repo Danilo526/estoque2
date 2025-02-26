@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestão de Estoque</title>
+    <style>
+        /* Estilos gerais */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            margin-right: 10px;
+            color: #3498db;
+        }
+        
+        /* Dashboard */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .dashboard-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .dashboard-card-title {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+        
+        .dashboard-card-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        
+        .dashboard-card-icon {
+            font-size: 24px;
+            margin-right: 10px;
+            color: #3498db;
+        }
+        
+        /* Tabs */
+        .tab-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        
+        .tab-header {
+            display: flex;
+            border-bottom: 1px solid #eee;
+            background-color: #f8f9fa;
+        }
+        
+        .tab-btn {
+            padding: 15px 25px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            color: #7f8c8d;
+            transition: all 0.3s ease;
+        }
+        
+        .tab-btn:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+            color: #3498db;
+        }
+        
+        .tab-btn.active {
+            color: #3498db;
+            border-bottom: 3px solid #3498db;
+            background-color: white;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Tabelas */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        table th {
+            background-color: #f8f9fa;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+        }
+        
+        table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        table tr.low-stock {
+            background-color: rgba(241, 196, 15, 0.1);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-badge.success {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+        }
+        
+        .status-badge.warning {
+            background-color: rgba(241, 196, 15, 0.2);
+            color: #f39c12;
+        }
+        
+        /* Formulário */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 15px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            background-color: #eee;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-right: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .edit-btn {
+            background-color: rgba(52, 152, 219, 0.1);
+            color: #3498db;
+        }
+        
+        .edit-btn:hover {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .delete-btn {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+        
+        .delete-btn:hover {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        /* Notificações */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .notification.success {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .notification.error {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .notification.warning {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .notification-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+        
+        .notification-content {
+            flex: 1;
+        }
+        
+        .notification-title {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        
+        .notification-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+        
+        .notification-close:hover {
+            opacity: 1;
+        }
+        
+        /* Loader */
+        .loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255,255,255,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .loader:after {
+            content: "";
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .tab-header {
+                flex-direction: column;
+            }
+            
+            .tab-btn {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Classes adicionais */
+        .chart-placeholder {
+            background-color: #f5f7fa;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            color: #7f8c8d;
+        }
+        
+        td.entrada {
+            color: #27ae60;
+            font-weight: 600;
+        }
+        
+        td.saída {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <i>📦</i> Sistema de Gestão de Estoque
+            </div>
+            <div class="date">Sexta, 21 de Fevereiro de 2025</div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Dashboard -->
+        <div class="dashboard">
+            <div class="dashboard-card">
+                <div class="dashboard-card-title">
+                    <i class="dashboard-card-icon">📊</i> Total de Produtos
+                </div>
+                <div class="dashboard-card-value" id="total-products">0</div>
+            </div>
+            
+            <div class="dashboard-card">
+                <div class="dashboard-card-title">
+                    <i class="dashboard-card-icon">💰</i> Valor em Estoque
+                </div>
+                <div class="dashboard-card-value" id="stock-value">R$ 0,00</div>
+            </div>
+            
+            <div class="dashboard-card">
+                <div class="dashboard-card-title">
+                    <i class="dashboard-card-icon">📥</i> Entradas Hoje
+                </div>
+                <div class="dashboard-card-value" id="today-entries">0</div>
+            </div>
+            
+            <div class="dashboard-card">
+                <div class="dashboard-card-title">
+                    <i class="dashboard-card-icon">📤</i> Saídas Hoje
+                </div>
+                <div class="dashboard-card-value" id="today-exits">0</div>
+            </div>
+        </div>
+        
+        <!-- Tabs Principal -->
+        <div class="tab-container">
+            <div class="tab-header">
+                <button class="tab-btn active" data-tab="inventory-tab">Inventário</button>
+                <button class="tab-btn" data-tab="movements-tab">Movimentações</button>
+                <button class="tab-btn" data-tab="add-product-tab">Adicionar Produto</button>
+                <button class="tab-btn" data-tab="remove-product-tab">Remover do Estoque</button>
+            </div>
+            
+            <!-- Tab de Inventário -->
+            <div id="inventory-tab" class="tab-content active">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Produto</th>
+                            <th>Categoria</th>
+                            <th>Preço</th>
+                            <th>Quantidade</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-table-body">
+                        <!-- Conteúdo gerado dinamicamente pelo JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Tab de Movimentações -->
+            <div id="movements-tab" class="tab-content">
+                <div id="daily-movement-chart" class="chart-placeholder">
+                    <!-- Gráfico gerado dinamicamente pelo JavaScript -->
+                </div>
+                
+                <h3 style="margin: 20px 0 10px 0;">Relatório Diário</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Código</th>
+                            <th>Produto</th>
+                            <th>Tipo</th>
+                            <th>Quantidade</th>
+                            <th>Valor Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="daily-report-body">
+                        <!-- Conteúdo gerado dinamicamente pelo JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Tab de Adicionar Produto -->
+            <div id="add-product-tab" class="tab-content">
+                <form id="add-product-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="product-code">Código do Produto</label>
+                            <input type="text" id="product-code" class="form-control" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="product-name">Nome do Produto</label>
+                            <input type="text" id="product-name" class="form-control" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="product-category">Categoria</label>
+                            <select id="product-category" class="form-control" required>
+                                <option value="">Selecione uma categoria</option>
+                                <option value="electronics">Eletrônicos</option>
+                                <option value="furniture">Móveis</option>
+                                <option value="clothing">Vestuário</option>
+                                <option value="books">Livros</option>
+                                <option value="other">Outros</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="product-price">Preço Unitário (R$)</label>
+                            <input type="number" id="product-price" class="form-control" step="0.01" min="0.01" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="product-quantity">Quantidade</label>
+                            <input type="number" id="product-quantity" class="form-control" min="1" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">Adicionar ao Estoque</button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Tab de Remover do Estoque -->
+            <div id="remove-product-tab" class="tab-content">
+                <form id="remove-product-form">
+                    <div class="form-group">
+                        <label for="remove-product-select">Selecione o Produto</label>
+                        <select id="remove-product-select" class="form-control" required>
+                            <option value="">Selecione um produto</option>
+                            <!-- Opções geradas dinamicamente pelo JavaScript -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="remove-quantity">Quantidade a Remover</label>
+                        <input type="number" id="remove-quantity" class="form-control" min="1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">Confirmar Remoção</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // O código JavaScript será importado de um arquivo externo
+        // Aqui estaria a referência para o script.js
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
