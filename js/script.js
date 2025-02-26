@@ -83,3 +83,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateInventory();
 });
+// Função para salvar o estoque no localStorage
+function saveStock() {
+    localStorage.setItem("stockData", JSON.stringify(stock));
+}
+
+// Função para carregar o estoque salvo ao abrir a página
+function loadStock() {
+    const savedStock = localStorage.getItem("stockData");
+    if (savedStock) {
+        stock = JSON.parse(savedStock);
+        updateStockDisplay();
+    }
+}
+
+// Modifique suas funções de adicionar e remover produtos para salvar os dados
+function addProduct(name, price, quantity) {
+    stock.push({ name, price, quantity });
+    saveStock(); // Salva no localStorage
+    updateStockDisplay();
+}
+
+function removeProduct(index) {
+    stock.splice(index, 1);
+    saveStock(); // Salva no localStorage
+    updateStockDisplay();
+}
+
+// Carregar estoque salvo ao abrir a página
+loadStock();
