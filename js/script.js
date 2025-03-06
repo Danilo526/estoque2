@@ -1,6 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // Inicialização do sistema de abas
+    setupTabs();
+    
     // Carregar inventário do localStorage ao iniciar
-    let inventory = loadInventory() || [];
+    let inventory = [];
+    loadInventory();
     
     const inventoryTable = document.getElementById("inventory-table-body");
     const totalProducts = document.getElementById("total-products");
@@ -18,12 +22,30 @@ document.addEventListener("DOMContentLoaded", () => {
     // Função para salvar o inventário no localStorage
     function saveInventory() {
         localStorage.setItem("inventoryData", JSON.stringify(inventory));
+        console.log("Dados salvos:", inventory); // Log para debugging
     }
 
     // Função para carregar o inventário do localStorage
     function loadInventory() {
         const savedInventory = localStorage.getItem("inventoryData");
-        return savedInventory ? JSON.parse(savedInventory) : null;
+        console.log("Dados carregados:", savedInventory); // Log para debugging
+        
+        if (savedInventory && savedInventory !== "undefined") {
+            try {
+                inventory = JSON.parse(savedInventory);
+                if (!Array.isArray(inventory)) {
+                    console.error("Dados inválidos no localStorage");
+                    inventory = [];
+                }
+            } catch (e) {
+                console.error("Erro ao carregar dados:", e);
+                inventory = [];
+            }
+        } else {
+            inventory = [];
+        }
+        
+        updateInventory();
     }
 
     function updateInventory() {
@@ -31,20 +53,32 @@ document.addEventListener("DOMContentLoaded", () => {
         removeProductSelect.innerHTML = "";
         let total = 0, value = 0;
 
+        // Adiciona uma opção vazia no select
+        const emptyOption = document.createElement("option");
+        emptyOption.value = "";
+        emptyOption.textContent = "Selecione um produto";
+        removeProductSelect.appendChild(emptyOption);
+
         inventory.forEach((item, index) => {
             total += item.quantity;
             value += item.price * item.quantity;
 
             // Atualiza tabela
-            const row = `
-                <tr>
-                    <td>${item.code}</td>
-                    <td>${item.name}</td>
-                    <td>R$ ${item.price.toFixed(2)}</td>
-                    <td>${item.quantity}</td>
-                    <td><button class="remove-btn" data-index="${index}">❌</button></td>
-                </tr>`;
-            inventoryTable.innerHTML += row;
+            const row = document.createElement("tr");
+            
+            row.innerHTML = `
+                <td>${item.code}</td>
+                <td>${item.name}</td>
+                <td>R$ ${item.price.toFixed(2)}</td>
+                <td>${item.quantity}</td>
+                <td><button class="remove-btn">❌</button></td>
+            `;
+            
+            // Adiciona botão de remoção com event listener
+            const removeBtn = row.querySelector(".remove-btn");
+            removeBtn.addEventListener("click", () => removeWholeProduct(index));
+            
+            inventoryTable.appendChild(row);
 
             // Atualiza seleção de produtos para remoção
             const option = document.createElement("option");
@@ -55,14 +89,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         totalProducts.textContent = total;
         stockValue.textContent = `R$ ${value.toFixed(2)}`;
-        
-        // Adiciona event listeners aos botões de remoção
-        document.querySelectorAll('.remove-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const index = parseInt(this.getAttribute('data-index'));
-                removeWholeProduct(index);
-            });
-        });
     }
 
     addProductForm.addEventListener("submit", (e) => {
@@ -72,7 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const price = parseFloat(document.getElementById("product-price").value);
         const quantity = parseInt(document.getElementById("product-quantity").value);
 
-        if (!name || price <= 0 || quantity <= 0) {
+        if (!code || !name || isNaN(price) || price <= 0 || isNaN(quantity) || quantity <= 0) {
             alert("Preencha os campos corretamente!");
             return;
         }
@@ -83,7 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (existingIndex >= 0) {
             // Se o produto já existe, atualize a quantidade
             inventory[existingIndex].quantity += quantity;
-            // Atualize também o preço caso tenha mudado
+            // Atualize também o preço e nome caso tenham mudado
             inventory[existingIndex].price = price;
             inventory[existingIndex].name = name;
         } else {
@@ -98,15 +124,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     removeProductForm.addEventListener("submit", (e) => {
         e.preventDefault();
-        const index = parseInt(removeProductSelect.value);
-        const removeQuantity = parseInt(document.getElementById("remove-quantity").value);
-
-        if (isNaN(index) || inventory.length === 0) {
+        const indexStr = removeProductSelect.value;
+        
+        if (!indexStr) {
             alert("Selecione um produto válido!");
             return;
         }
+        
+        const index = parseInt(indexStr);
+        const removeQuantity = parseInt(document.getElementById("remove-quantity").value);
 
-        if (removeQuantity <= 0 || removeQuantity > inventory[index].quantity) {
+        if (isNaN(removeQuantity) || removeQuantity <= 0 || removeQuantity > inventory[index].quantity) {
             alert("Quantidade inválida!");
             return;
         }
@@ -130,22 +158,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Sistema de abas
-    const tabButtons = document.querySelectorAll(".tab-btn");
-    const tabContents = document.querySelectorAll(".tab-content");
+    function setupTabs() {
+        const tabButtons = document.querySelectorAll(".tab-btn");
+        const tabContents = document.querySelectorAll(".tab-content");
 
-    tabButtons.forEach(button => {
-        button.addEventListener("click", () => {
-            // Remove a classe active de todos os botões e conteúdos
-            tabButtons.forEach(btn => btn.classList.remove("active"));
-            tabContents.forEach(content => content.classList.remove("active"));
-            
-            // Adiciona a classe active ao botão clicado e ao conteúdo correspondente
-            button.classList.add("active");
-            const tabId = button.getAttribute("data-tab");
-            document.getElementById(tabId).classList.add("active");
+        tabButtons.forEach(button => {
+            button.addEventListener("click", () => {
+                // Remove a classe active de todos os botões e conteúdos
+                tabButtons.forEach(btn => btn.classList.remove("active"));
+                tabContents.forEach(content => content.classList.remove("active"));
+                
+                // Adiciona a classe active ao botão clicado e ao conteúdo correspondente
+                button.classList.add("active");
+                const tabId = button.getAttribute("data-tab");
+                document.getElementById(tabId).classList.add("active");
+            });
         });
-    });
-
-    // Inicializa o inventário
-    updateInventory();
+    }
 });
