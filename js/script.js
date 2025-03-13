@@ -1,178 +1,201 @@
-document.addEventListener("DOMContentLoaded", () => {
-    // Inicialização do sistema de abas
-    setupTabs();
-    
-    // Carregar inventário do localStorage ao iniciar
-    let inventory = [];
-    loadInventory();
-    
-    const inventoryTable = document.getElementById("inventory-table-body");
-    const totalProducts = document.getElementById("total-products");
-    const stockValue = document.getElementById("stock-value");
-    const currentDate = document.getElementById("current-date");
-
-    const addProductForm = document.getElementById("add-product-form");
-    const removeProductForm = document.getElementById("remove-product-form");
-    const removeProductSelect = document.getElementById("remove-product-select");
-
-    // Mostrar data atual
+// Inicializar o sistema de estoque
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar data atual
     const today = new Date();
-    currentDate.textContent = today.toLocaleDateString('pt-BR');
-
-    // Função para salvar o inventário no localStorage
-    function saveInventory() {
-        localStorage.setItem("inventoryData", JSON.stringify(inventory));
-        console.log("Dados salvos:", inventory); // Log para debugging
-    }
-
-    // Função para carregar o inventário do localStorage
-    function loadInventory() {
-        const savedInventory = localStorage.getItem("inventoryData");
-        console.log("Dados carregados:", savedInventory); // Log para debugging
-        
-        if (savedInventory && savedInventory !== "undefined") {
-            try {
-                inventory = JSON.parse(savedInventory);
-                if (!Array.isArray(inventory)) {
-                    console.error("Dados inválidos no localStorage");
-                    inventory = [];
-                }
-            } catch (e) {
-                console.error("Erro ao carregar dados:", e);
-                inventory = [];
-            }
-        } else {
-            inventory = [];
-        }
-        
-        updateInventory();
-    }
-
-    function updateInventory() {
-        inventoryTable.innerHTML = "";
-        removeProductSelect.innerHTML = "";
-        let total = 0, value = 0;
-
-        // Adiciona uma opção vazia no select
-        const emptyOption = document.createElement("option");
-        emptyOption.value = "";
-        emptyOption.textContent = "Selecione um produto";
-        removeProductSelect.appendChild(emptyOption);
-
-        inventory.forEach((item, index) => {
-            total += item.quantity;
-            value += item.price * item.quantity;
-
-            // Atualiza tabela
-            const row = document.createElement("tr");
-            
-            row.innerHTML = `
-                <td>${item.code}</td>
-                <td>${item.name}</td>
-                <td>R$ ${item.price.toFixed(2)}</td>
-                <td>${item.quantity}</td>
-                <td><button class="remove-btn">❌</button></td>
-            `;
-            
-            // Adiciona botão de remoção com event listener
-            const removeBtn = row.querySelector(".remove-btn");
-            removeBtn.addEventListener("click", () => removeWholeProduct(index));
-            
-            inventoryTable.appendChild(row);
-
-            // Atualiza seleção de produtos para remoção
-            const option = document.createElement("option");
-            option.value = index;
-            option.textContent = `${item.name} (Qtd: ${item.quantity})`;
-            removeProductSelect.appendChild(option);
-        });
-
-        totalProducts.textContent = total;
-        stockValue.textContent = `R$ ${value.toFixed(2)}`;
-    }
-
-    addProductForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const code = document.getElementById("product-code").value;
-        const name = document.getElementById("product-name").value;
-        const price = parseFloat(document.getElementById("product-price").value);
-        const quantity = parseInt(document.getElementById("product-quantity").value);
-
-        if (!code || !name || isNaN(price) || price <= 0 || isNaN(quantity) || quantity <= 0) {
-            alert("Preencha os campos corretamente!");
-            return;
-        }
-
-        // Verificar se o produto já existe pelo código
-        const existingIndex = inventory.findIndex(item => item.code === code);
-        
-        if (existingIndex >= 0) {
-            // Se o produto já existe, atualize a quantidade
-            inventory[existingIndex].quantity += quantity;
-            // Atualize também o preço e nome caso tenham mudado
-            inventory[existingIndex].price = price;
-            inventory[existingIndex].name = name;
-        } else {
-            // Se o produto é novo, adicione ao inventário
-            inventory.push({ code, name, price, quantity });
-        }
-        
-        saveInventory(); // Salva no localStorage
-        updateInventory();
-        addProductForm.reset();
-    });
-
-    removeProductForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const indexStr = removeProductSelect.value;
-        
-        if (!indexStr) {
-            alert("Selecione um produto válido!");
-            return;
-        }
-        
-        const index = parseInt(indexStr);
-        const removeQuantity = parseInt(document.getElementById("remove-quantity").value);
-
-        if (isNaN(removeQuantity) || removeQuantity <= 0 || removeQuantity > inventory[index].quantity) {
-            alert("Quantidade inválida!");
-            return;
-        }
-
-        inventory[index].quantity -= removeQuantity;
-        if (inventory[index].quantity === 0) {
-            inventory.splice(index, 1);
-        }
-
-        saveInventory(); // Salva no localStorage
-        updateInventory();
-        removeProductForm.reset();
-    });
-
-    function removeWholeProduct(index) {
-        if (confirm("Tem certeza que deseja remover este produto?")) {
-            inventory.splice(index, 1);
-            saveInventory(); // Salva no localStorage
-            updateInventory();
-        }
-    }
-
-    // Sistema de abas
-    function setupTabs() {
-        const tabButtons = document.querySelectorAll(".tab-btn");
-        const tabContents = document.querySelectorAll(".tab-content");
-
-        tabButtons.forEach(button => {
-            button.addEventListener("click", () => {
-                // Remove a classe active de todos os botões e conteúdos
-                tabButtons.forEach(btn => btn.classList.remove("active"));
-                tabContents.forEach(content => content.classList.remove("active"));
-                
-                // Adiciona a classe active ao botão clicado e ao conteúdo correspondente
-                button.classList.add("active");
-                const tabId = button.getAttribute("data-tab");
-                document.getElementById(tabId).classList.add("active");
-            });
-        });
-    }
+    const options = { day: 'numeric', month: 'long', year: 'numeric' };
+    document.getElementById('current-date').textContent = today.toLocaleDateString('pt-BR', options);
+    
+    // Carregar os produtos do localStorage
+    loadProducts();
+    
+    // Configurar os ouvintes de eventos
+    setupEventListeners();
 });
+
+// Sistema de abas
+function setupEventListeners() {
+    // Sistema de abas
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remover classe ativa de todas as abas
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Adicionar classe ativa na aba clicada
+            this.classList.add('active');
+            const tabId = this.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+    
+    // Formulário para adicionar produtos
+    document.getElementById('add-product-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        addProduct();
+    });
+    
+    // Formulário para remover estoque
+    document.getElementById('remove-product-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        removeStock();
+    });
+}
+
+// Funções para gerenciar o estoque
+let products = [];
+
+// Carregar produtos do localStorage
+function loadProducts() {
+    const savedProducts = localStorage.getItem('inventory');
+    if (savedProducts) {
+        products = JSON.parse(savedProducts);
+    }
+    
+    updateInventoryTable();
+    updateDashboard();
+    updateRemoveSelect();
+}
+
+// Salvar produtos no localStorage
+function saveProducts() {
+    localStorage.setItem('inventory', JSON.stringify(products));
+}
+
+// Adicionar um novo produto
+function addProduct() {
+    const code = document.getElementById('product-code').value;
+    const name = document.getElementById('product-name').value;
+    const price = parseFloat(document.getElementById('product-price').value);
+    const quantity = parseInt(document.getElementById('product-quantity').value);
+    
+    // Verificar se o código já existe
+    const existingProductIndex = products.findIndex(p => p.code === code);
+    
+    if (existingProductIndex >= 0) {
+        // Atualizar produto existente
+        products[existingProductIndex].quantity += quantity;
+        if (price !== products[existingProductIndex].price) {
+            products[existingProductIndex].price = price;
+        }
+    } else {
+        // Adicionar novo produto
+        products.push({
+            code,
+            name,
+            price,
+            quantity
+        });
+    }
+    
+    // Salvar e atualizar a interface
+    saveProducts();
+    updateInventoryTable();
+    updateDashboard();
+    updateRemoveSelect();
+    
+    // Limpar o formulário
+    document.getElementById('add-product-form').reset();
+    
+    // Exibir mensagem de sucesso
+    alert('Produto adicionado com sucesso!');
+}
+
+// Remover estoque de um produto
+function removeStock() {
+    const code = document.getElementById('remove-product-select').value;
+    const quantity = parseInt(document.getElementById('remove-quantity').value);
+    
+    // Encontrar o produto
+    const productIndex = products.findIndex(p => p.code === code);
+    
+    if (productIndex >= 0) {
+        // Verificar se há estoque suficiente
+        if (products[productIndex].quantity >= quantity) {
+            products[productIndex].quantity -= quantity;
+            
+            // Se a quantidade chegar a zero, perguntar se deseja remover o produto
+            if (products[productIndex].quantity === 0) {
+                const remove = confirm('O estoque deste produto chegou a zero. Deseja remover o produto do sistema?');
+                if (remove) {
+                    products.splice(productIndex, 1);
+                }
+            }
+            
+            // Salvar e atualizar a interface
+            saveProducts();
+            updateInventoryTable();
+            updateDashboard();
+            updateRemoveSelect();
+            
+            // Limpar o formulário
+            document.getElementById('remove-product-form').reset();
+            
+            // Exibir mensagem de sucesso
+            alert('Estoque removido com sucesso!');
+        } else {
+            alert('Quantidade insuficiente em estoque!');
+        }
+    }
+}
+
+// Remover produto completamente
+function deleteProduct(code) {
+    if (confirm('Tem certeza que deseja excluir este produto?')) {
+        const productIndex = products.findIndex(p => p.code === code);
+        if (productIndex >= 0) {
+            products.splice(productIndex, 1);
+            
+            // Salvar e atualizar a interface
+            saveProducts();
+            updateInventoryTable();
+            updateDashboard();
+            updateRemoveSelect();
+        }
+    }
+}
+
+// Atualizar a tabela de inventário
+function updateInventoryTable() {
+    const tableBody = document.getElementById('inventory-table-body');
+    tableBody.innerHTML = '';
+    
+    products.forEach(product => {
+        const row = document.createElement('tr');
+        
+        row.innerHTML = `
+            <td>${product.code}</td>
+            <td>${product.name}</td>
+            <td>R$ ${product.price.toFixed(2)}</td>
+            <td>${product.quantity}</td>
+            <td>
+                <button class="action-btn" onclick="deleteProduct('${product.code}')">Excluir</button>
+            </td>
+        `;
+        
+        tableBody.appendChild(row);
+    });
+}
+
+// Atualizar o painel de controle
+function updateDashboard() {
+    const totalProducts = products.reduce((sum, product) => sum + product.quantity, 0);
+    const stockValue = products.reduce((sum, product) => sum + (product.price * product.quantity), 0);
+    
+    document.getElementById('total-products').textContent = totalProducts;
+    document.getElementById('stock-value').textContent = `R$ ${stockValue.toFixed(2)}`;
+}
+
+// Atualizar o select para remover produto
+function updateRemoveSelect() {
+    const select = document.getElementById('remove-product-select');
+    select.innerHTML = '';
+    
+    products.forEach(product => {
+        const option = document.createElement('option');
+        option.value = product.code;
+        option.textContent = `${product.code} - ${product.name} (Em estoque: ${product.quantity})`;
+        select.appendChild(option);
+    });
+}
